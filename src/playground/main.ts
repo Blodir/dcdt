@@ -31,8 +31,14 @@ const generateRandomInput = (max: number) => {
 };
 
 const drawEdges = (edges: Edge[]) => {
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   for (let edge of edges) {
+    if (edge.crep.length > 0) {
+      ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 1;
+    }
     ctx.beginPath();
     ctx.moveTo(edge.vertices[0].position[0] * scale + offset, edge.vertices[0].position[1] * scale + offset);
     ctx.lineTo(edge.vertices[1].position[0] * scale + offset, edge.vertices[1].position[1] * scale + offset);
