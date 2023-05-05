@@ -21,6 +21,7 @@ export const V2 = {
     } else { return v; }
   },
   dot: (a: V2, b: V2): number => a[0] * b[0] + a[1] * b[1],
+  cross: (a: V2, b: V2): number => a[0] * b[1] - a[1] * b[0],
   rotRad: (v: V2, rad: number): V2 => [Math.cos(rad) * v[0] - Math.sin(rad) * v[1], Math.sin(rad) * v[0] + Math.cos(rad) * v[1]], // anticlockwise rotation
   lerp: (a: V2, b: V2, t: number) => V2.add(a, V2.scale(V2.sub(b, a), t)), // a + (b - a) * t
   quadraticBezier: (a: V2, b: V2, c: V2, t: number) => {
@@ -57,6 +58,7 @@ export const pointIsOnRightSideOfLineSegment = (point: V2, lineSegment: [V2, V2]
   return V2.dot(OB, P) > 0;
 };
 
+// has errors when some of the coordinates are zero?
 export const pointIsInsideTriangle = (p: V2, a: V2, b: V2, c: V2): boolean => (
   pointIsOnLineSegment(p, a, b)
   || pointIsOnLineSegment(p, b, c)
@@ -110,7 +112,9 @@ export const pointIsInsideCircumcircle = (p: V2, a: V2, b: V2, c: V2): boolean =
   return V2.dist(p, circumcenter) < r;
 };
 
-export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => (x < (bx - ax) * (y - ay) / (by - ay) + ax);
+//export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => (x < (bx - ax) * (y - ay) / (by - ay) + ax);
+// expects math coordinates (flipped y)
+export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => ((bx - ax) * (y - ay) - (by - ay) * (x - ax) > 0);
 
 export const pointDistToLineSegment = (p: V2, a: V2, b: V2): number => {
   const AP = V2.sub(p, a);

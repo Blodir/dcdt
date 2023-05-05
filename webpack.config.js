@@ -5,7 +5,7 @@ const config = {
 	name: "client",
   mode: 'development',
   devtool: 'inline-source-map',
-  entry: './src/playground/main.ts',
+  entry: './src/playground/v2main.ts',
   module: {
     rules: [
       {
