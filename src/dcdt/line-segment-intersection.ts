@@ -46,7 +46,7 @@ const comp = (a: number, b: number, f = 0.000001): number => {
 // https://stackoverflow.com/a/565282
 // ɛ: distance error
 // f: float error
-export const lineToLineIntersection3 = (a: V2, b: V2, c: V2, d: V2, ɛ = 0.000001, f = 0.000001): IntersectionResult => {
+export const lineSegmentIntersection = (a: V2, b: V2, c: V2, d: V2, ɛ = 0.000001, f = 0.000001): IntersectionResult => {
   const r = V2.sub(b, a);
   const s = V2.sub(d, c);
   // u = (q − p) × r / (r × s)

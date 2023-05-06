@@ -1,14 +1,11 @@
 import { pointIsOnLeftHalfplane } from "../dcdt/math";
-import { drawPoints } from "../playground/v2main";
-import { Tri } from "./dcdt2";
-import { DFS } from "./graph-search";
+import { Tri } from "./dcdt";
 
 export const validateTriangulation = (tris: Tri[]) => {
   for (let t of tris) {
-
     console.assert(
       t.length === 3,
-      'each Tri has 3 TriEdges'
+      'each Tri has 3 edges'
     );
 
     for (let i = 0; i < 3; i++) {
@@ -40,8 +37,7 @@ export const validateTriangulation = (tris: Tri[]) => {
   // subdivision is maximal
   // ...
   // for each vertex v the list v.T should be clockwise
+  // ...
+  // triangulation is a CDT
+  // ...
 };
-
-const validateDelaunay = (tris: Tri[]) => {
-  // each unconstrained edge has the delaunay property
-}

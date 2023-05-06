@@ -1,7 +1,5 @@
 import { pointDistToLineSegment, V2 } from "../dcdt/math";
-import { drawTriangleEdges } from "../playground/v2main";
-import { Tri, Edge, Vertex } from "./dcdt2";
-import { validateTriangulation } from "./validation";
+import { Tri, Edge, Vertex } from "./dcdt";
 
 // https://stackoverflow.com/a/2049593
 const signSO = (p1: [number, number], p2: [number, number], p3: [number, number]) => {
@@ -163,22 +161,22 @@ const insertVertexInTri = (p: [number, number], tri: Tri): Vertex => {
 
 (in degenerate case t2 doesn't exist)
 */
-const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIdx: number): Vertex => {
+const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIx: number): Vertex => {
   const t1: Tri = tri;
-  const t1v1v0: Edge = tri[edgeIdx];
+  const t1v1v0: Edge = tri[edgeIx];
   const t2 = t1v1v0.neighbor;
 
-  const t1v0v2 = tri[(edgeIdx + 1) % 3];
-  const t1v2v1 = tri[(edgeIdx + 2) % 3];
+  const t1v0v2 = tri[(edgeIx + 1) % 3];
+  const t1v2v1 = tri[(edgeIx + 2) % 3];
 
   const v0: Vertex = t1v0v2.v;
   const v1: Vertex = t1v1v0.v;
   const v2: Vertex = t1v2v1.v;
 
-  const t2edgeIdx = t2?.findIndex(te => te.v === v1);
-  const t2v0v1 = t2?.[(<number>t2edgeIdx + 2) % 3];
-  const t2v1v3 = t2?.[(<number>t2edgeIdx) % 3];
-  const t2v3v0 = t2?.[(<number>t2edgeIdx + 1) % 3];
+  const t2edgeIx = t2?.findIndex(te => te.v === v1);
+  const t2v0v1 = t2?.[(<number>t2edgeIx + 2) % 3];
+  const t2v1v3 = t2?.[(<number>t2edgeIx) % 3];
+  const t2v3v0 = t2?.[(<number>t2edgeIx + 1) % 3];
 
   const v3 = t2v3v0?.v;
 
@@ -263,22 +261,22 @@ const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIdx: number): Ver
 };
 
 // returns the index of the resulting vertex in the CDT
-export const insertVertex = (root: Tri, p: [number, number], cIdx: number, ɛ: number): Vertex => {
+export const insertVertex = (root: Tri, p: [number, number], cIx: number, ɛ: number): Vertex => {
   // locate point
   const tri = locatePoint(root, p);
   if (!tri) {
     throw new Error('Point outside of triangulation');
   }
-  const vIdx = pointOnVertex(p, tri, ɛ);
-  const eIdx = pointOnEdge(p, tri, ɛ);
-  if (vIdx !== null) {
+  const vIx = pointOnVertex(p, tri, ɛ);
+  const eIx = pointOnEdge(p, tri, ɛ);
+  if (vIx !== null) {
     console.log('vertex exists'); // TODO test this, it's very rare
     // Vertex already exists, add constraint
-    // tri[vIdx].cIdx.push(cIdx);
-    return tri[vIdx].v;
-  } else if (eIdx !== null) {
+    // tri[vIx].cIx.push(cIx);
+    return tri[vIx].v;
+  } else if (eIx !== null) {
     console.log('point on edge'); // TODO test this, it's very rare
-    return insertVertexOnEdge(p, tri, eIdx);
+    return insertVertexOnEdge(p, tri, eIx);
   } else {
     return insertVertexInTri(p, tri);
   }

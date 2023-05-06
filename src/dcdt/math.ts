@@ -142,3 +142,11 @@ export const pointDistToLineSegmentB = (p: V2, a: V2, b: V2): number | null => {
     return null;
   }
 };
+
+// https://stackoverflow.com/a/38856694
+export const rightSideAngle = (a: V2, b: V2, c: V2): number => {
+  const p2p1 = V2.sub(a, b);
+  const p2p3 = V2.sub(c, b);
+  const signed = Math.atan2(V2.cross(p2p1, p2p3), V2.dot(p2p1, p2p3));
+  return signed < 0 ? 2 * Math.PI + signed : signed;
+}
