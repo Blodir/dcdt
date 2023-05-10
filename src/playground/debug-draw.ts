@@ -26,7 +26,7 @@ export class DebugDraw {
     }
   }
 
-  drawTriangleEdges = (tri: Tri, color?: string) => {
+  drawTriangle = (tri: Tri, color?: string) => {
     const edges: [V2,V2][] = [];
     for (let i = 0; i < 3; i++) {
       edges.push([tri[i].v.p, tri[(i + 1) % 3].v.p]);
@@ -51,11 +51,11 @@ export class DebugDraw {
     this.drawPoints(vertices.map(v => v.p), color);
   }
 
-  drawTriangulation (tri: Tri, color?: string) {
+  drawTriangulation (tri: Tri, color = 'rgba(0,0,0,.2)') {
     const tris = DFS(tri);
     const verts = getVerticesFromTriangles(tris);
 
-    tris.forEach(tri => this.drawTriangleEdges(tri, color));
+    tris.forEach(tri => this.drawTriangle(tri, color));
     this.drawVertices(verts, color);
   }
 }

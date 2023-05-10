@@ -24,5 +24,5 @@ const [tri, cIx] = insertConstraint(root, C, 0.001);
 const tris = DFS(tri);
 const verts = getVerticesFromTriangles(tris);
 validateTriangulation(tris);
-tris.forEach(tri => debug.drawTriangleEdges(tri, 'rgba(0,0,0,.2)'));
+tris.forEach(tri => debug.drawTriangle(tri, 'rgba(0,0,0,.2)'));
 debug.drawVertices(verts, 'rgba(0,0,0,.2)');
