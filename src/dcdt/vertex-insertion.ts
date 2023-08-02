@@ -1,46 +1,8 @@
-import { pointDistToLineSegment, V2 } from "../dcdt/math";
+import { pointDistToLineSegment, pointIsOnLineSegment, projectPointToLine, V2 } from "../dcdt/math";
+import { debug } from "../playground/main";
+import { DFS } from "../playground/utils";
 import { Tri, Edge, Vertex } from "./dcdt";
-
-// https://stackoverflow.com/a/2049593
-const signSO = (p1: [number, number], p2: [number, number], p3: [number, number]) => {
-  return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
-}
-const pointInTriangleSO = (pt: [number, number], v1: [number, number], v2: [number, number], v3: [number, number]) => {
-  let d1: number, d2: number, d3: number;
-  let has_neg: boolean, has_pos: boolean;
-
-  d1 = signSO(pt, v1, v2);
-  d2 = signSO(pt, v2, v3);
-  d3 = signSO(pt, v3, v1);
-
-  has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-  has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
-  return !(has_neg && has_pos);
-}
-const triContainsPoint = (tri: Tri, p: [number, number]): boolean => pointInTriangleSO(p, tri[0].v.p, tri[1].v.p, tri[2].v.p);
-
-export const locatePointDFS = (root: Tri, p: V2): Tri | null => {
-  const visited: Set<Tri> = new Set();
-  const unexplored: Tri[] = [ root ];
-  while (unexplored.length > 0) {
-    const tri = <Tri>unexplored.pop();
-    if (triContainsPoint(tri, p)) {
-      return tri;
-    }
-    for (const te of tri) {
-      if (te.neighbor && !visited.has(te.neighbor)) {
-        unexplored.push(te.neighbor);
-      }
-    }
-    visited.add(tri);
-  }
-  return null;
-};
-
-const locatePoint = (root: Tri, p: [number, number]): Tri | null => {
-  return locatePointDFS(root, p);
-}
+import { validateTriangulation } from "./validation";
 
 const pointOnVertex = (p: V2, tri: Tri, ɛ: number): number | null => {
   if (V2.dist(p, tri[0].v.p) < ɛ) {
@@ -73,32 +35,33 @@ const replaceInArr = <T>(arr: T[], item: T, newItems: T[]): T[] => {
   return [...l, ...newItems, ...r];
 };
 
-const insertVertexInTri = (p: [number, number], tri: Tri): Vertex => {
+const insertVertexInTri = (p: [number, number], tri: Tri, cIx: number): Vertex => {
   // split triangle into 3 parts, then perform edge flipping
 
   // create new vertex
 
   const v: Vertex = {
     p,
-    T: []
+    T: [],
+    C: new Set<number>([cIx])
   };
 
   // create new triangles
 
   const t1: Tri = [
-    { v, neighbor: null },
-    { v: tri[0].v, neighbor: tri[0].neighbor },
-    { v: tri[1].v, neighbor: null }
+    { v, neighbor: null, C: new Set<number>() },
+    { v: tri[0].v, neighbor: tri[0].neighbor, C: tri[0].C },
+    { v: tri[1].v, neighbor: null, C: new Set<number>() }
   ];
   const t2: Tri = [
-    { v, neighbor: null },
-    { v: tri[1].v, neighbor: tri[1].neighbor },
-    { v: tri[2].v, neighbor: null }
+    { v, neighbor: null, C: new Set<number>() },
+    { v: tri[1].v, neighbor: tri[1].neighbor, C: tri[1].C },
+    { v: tri[2].v, neighbor: null, C: new Set<number>() }
   ];
   const t3: Tri = [
-    { v, neighbor: null },
-    { v: tri[2].v, neighbor: tri[2].neighbor },
-    { v: tri[0].v, neighbor: null }
+    { v, neighbor: null, C: new Set<number>() },
+    { v: tri[2].v, neighbor: tri[2].neighbor, C: tri[2].C },
+    { v: tri[0].v, neighbor: null, C: new Set<number>() }
   ];
 
   // connect the new triangles to each other
@@ -161,13 +124,13 @@ const insertVertexInTri = (p: [number, number], tri: Tri): Vertex => {
 
 (in degenerate case t2 doesn't exist)
 */
-const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIx: number): Vertex => {
+export const insertVertexOnEdge = (p: [number, number], tri: Tri, eIx: number, cIx: number): Vertex => {
   const t1: Tri = tri;
-  const t1v1v0: Edge = tri[edgeIx];
+  const t1v1v0: Edge = tri[eIx];
   const t2 = t1v1v0.neighbor;
 
-  const t1v0v2 = tri[(edgeIx + 1) % 3];
-  const t1v2v1 = tri[(edgeIx + 2) % 3];
+  const t1v0v2 = tri[(eIx + 1) % 3];
+  const t1v2v1 = tri[(eIx + 2) % 3];
 
   const v0: Vertex = t1v0v2.v;
   const v1: Vertex = t1v1v0.v;
@@ -187,29 +150,30 @@ const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIx: number): Vert
 
   const v: Vertex = {
     p,
-    T: []
+    T: [],
+    C: new Set<number>([cIx])
   };
 
   // Create new triangles
   const t3: Tri = [
-    { neighbor: null, v: v },
-    { neighbor: v0v2neighbor, v: v0 },
-    { neighbor: null, v: v2 }
+    { neighbor: null, v: v, C: new Set<number>()},
+    { neighbor: v0v2neighbor, v: v0, C: t1v0v2.C },
+    { neighbor: null, v: v2, C: new Set<number>() }
   ];
   const t4: Tri = [
-    { neighbor: null, v: v },
-    { neighbor: v2v1neighbor, v: v2 },
-    { neighbor: null, v: v1 }
+    { neighbor: null, v: v, C: new Set<number>() },
+    { neighbor: v2v1neighbor, v: v2, C: t1v2v1.C },
+    { neighbor: null, v: v1, C: new Set<number>() }
   ];
   const t5: Tri | undefined = t2 ? [
-    { neighbor: null, v: v },
-    { neighbor: <Tri | null>v1v3neighbor, v: v1 },
-    { neighbor: null, v: <Vertex>v3 }
+    { neighbor: null, v: v, C: new Set<number>() },
+    { neighbor: <Tri | null>v1v3neighbor, v: v1, C: (<Edge>t2v1v3).C },
+    { neighbor: null, v: <Vertex>v3, C: new Set<number>() }
   ] : undefined;
   const t6: Tri | undefined = t2 ? [
-    { neighbor: null, v: v },
-    { neighbor: <Tri | null>v3v0neighbor, v: <Vertex>v3 },
-    { neighbor: null, v: v0 }
+    { neighbor: null, v: v, C: new Set<number>() },
+    { neighbor: <Tri | null>v3v0neighbor, v: <Vertex>v3, C: (<Edge>t2v3v0).C },
+    { neighbor: null, v: v0, C: new Set<number>() }
   ] : undefined;
 
   // Connect the new triangles
@@ -261,23 +225,28 @@ const insertVertexOnEdge = (p: [number, number], tri: Tri, edgeIx: number): Vert
 };
 
 // returns the index of the resulting vertex in the CDT
-export const insertVertex = (root: Tri, p: [number, number], cIx: number, ɛ: number): Vertex => {
-  // locate point
-  const tri = locatePoint(root, p);
-  if (!tri) {
-    throw new Error('Point outside of triangulation');
-  }
+export const insertVertex = (tri: Tri, p: [number, number], cIx: number, ɛ: number): Vertex => {
   const vIx = pointOnVertex(p, tri, ɛ);
   const eIx = pointOnEdge(p, tri, ɛ);
   if (vIx !== null) {
-    console.log('vertex exists'); // TODO test this, it's very rare
     // Vertex already exists, add constraint
-    // tri[vIx].cIx.push(cIx);
+    tri[vIx].v.C.add(cIx);
     return tri[vIx].v;
   } else if (eIx !== null) {
-    console.log('point on edge'); // TODO test this, it's very rare
-    return insertVertexOnEdge(p, tri, eIx);
+    // point projection on the line is not necessarily on the line segment!
+    const pPrime = projectPointToLine(p, tri[eIx].v.p, tri[(eIx+1) % 3].v.p);
+    if (pointIsOnLineSegment(pPrime, tri[eIx].v.p, tri[(eIx+1) % 3].v.p)) {
+      return insertVertexOnEdge(pPrime, tri, eIx, cIx);
+    } else {
+      if (V2.dist(pPrime, tri[eIx].v.p) < V2.dist(pPrime, tri[(eIx+1) % 3].v.p)) {
+        tri[eIx].v.C.add(cIx);
+        return tri[eIx].v;
+      } else {
+        tri[(eIx+1) % 3].v.C.add(cIx);
+        return tri[(eIx+1) % 3].v;
+      }
+    }
   } else {
-    return insertVertexInTri(p, tri);
+    return insertVertexInTri(p, tri, cIx);
   }
 };

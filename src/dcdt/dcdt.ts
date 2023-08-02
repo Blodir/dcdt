@@ -1,5 +1,8 @@
-import { insertEdge } from "./edge-insertion";
-import { insertEdge2 } from "./edge-insertion-2";
+import { debug } from "../playground/main";
+import { DFS, createTestSquare } from "../playground/utils";
+import { insertEdge } from "./edge-insertion/edge-insertion";
+import { V2, pointInTriangleSO } from "./math";
+import { validateTriangulation } from "./validation";
 import { insertVertex } from "./vertex-insertion";
 
 export interface Constraint {
@@ -11,10 +14,12 @@ export interface Constraint {
 export interface Vertex {
   p: [number, number];
   T: Tri[]; // in clockwise order
+  C: Set<number>;
 }
 export interface Edge {
   v: Vertex;
   neighbor: Tri | null; // neighbor on the left side of the edge
+  C: Set<number>;
 }
 export type Tri = [Edge, Edge, Edge]; // in clockwise order
 
@@ -48,11 +53,13 @@ export const flipEdge = (A: Tri, B: Tri) => {
 
   const bd: Edge = {
     v: b,
-    neighbor: B
+    neighbor: B,
+    C: ac.C
   };
   const db: Edge = {
     v: d,
-    neighbor: A
+    neighbor: A,
+    C: ca.C
   };
 
   //A = [da, ab, bd];
@@ -80,26 +87,70 @@ export const flipEdge = (A: Tri, B: Tri) => {
 };
 
 
-// Inserts a constraint and returns its index
-export const insertConstraint = (root: Tri, C: Constraint, ɛ: number): [ Tri, number ] => {
-  // assign next available id for the constraint
-  const cIx = 0; // ...
-  // insert vertices
-  const vertices: Vertex[] = [];
-  let _root = root;
-  for (let i = 0; i < C.P.length; i++) {
-    const v = insertVertex(_root, C.P[i], cIx, ɛ);
-    _root = <Tri>v.T.find(t => t);
-    vertices.push(v);
-  }
-  // map edge indices from constraint space to CDT space
-  const edges = C.E.map(e => (<[Vertex, Vertex]>[vertices[e[0]], vertices[e[1]]]));
-  // insert edges
-  edges.forEach(e => insertEdge2(e[0], e[1]));
+const triContainsPoint = (tri: Tri, p: [number, number]): boolean => pointInTriangleSO(p, tri[0].v.p, tri[1].v.p, tri[2].v.p);
 
-  if (vertices.length > 0) {
-    return [vertices[0].T[0], cIx];
+export const locatePointDFS = (root: Tri, p: V2): Tri | null => {
+  const visited: Set<Tri> = new Set();
+  const unexplored: Tri[] = [ root ];
+  while (unexplored.length > 0) {
+    const tri = <Tri>unexplored.pop();
+    if (triContainsPoint(tri, p)) {
+      return tri;
+    }
+    for (const te of tri) {
+      if (te.neighbor && !visited.has(te.neighbor)) {
+        unexplored.push(te.neighbor);
+      }
+    }
+    visited.add(tri);
   }
-
-  return [root, cIx];
+  return null;
 };
+
+const locatePoint = (root: Tri, p: [number, number]): Tri | null => {
+  return locatePointDFS(root, p);
+}
+
+export class DCDT {
+  private constraints = [undefined]; // index 0 is reserved for test square
+
+  someTri: Tri;
+
+  constructor(width: number, height: number, private ɛ = 0.00001) {
+    this.someTri = createTestSquare(width, height);
+  }
+
+  insertConstraint(c: Constraint): number {
+    // assign next available id for the constraint
+    const cIx = this.constraints.length;
+
+    // insert vertices
+    const vertices: Vertex[] = [];
+    for (let i = 0; i < c.P.length; i++) {
+      const tri = locatePoint(this.someTri, c.P[i]); // ...
+      if (!tri) {
+        throw new Error('Point outside of triangulation');
+      }
+      const v = insertVertex(tri, c.P[i], cIx, this.ɛ);
+      this.someTri = v.T[0];
+      vertices.push(v);
+    }
+
+    // map edge indices from constraint space to CDT space
+    const edges = c.E.map(e => (<[Vertex, Vertex]>[vertices[e[0]], vertices[e[1]]]));
+
+    // insert edges
+    edges.forEach(e => insertEdge(e[0], e[1], cIx, this.ɛ));
+    // someTri has to be updated since insertEdge may be destructive
+    this.someTri = vertices[0].T[0];
+
+    this.constraints.push(undefined); // ...
+    return cIx;
+  }
+
+  removeConstraint(cIx: number) {
+    // unconstrain edges of c
+    // unconstrain vertices of c
+      // if vertex has no constraints, remove it
+  }
+}

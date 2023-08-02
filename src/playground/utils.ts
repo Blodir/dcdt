@@ -1,12 +1,12 @@
 import { Tri, Vertex } from "../dcdt/dcdt";
 import { V2 } from "../dcdt/math";
 
-const randomPoint = (): V2 => [Math.random(), Math.random()];
+const randomPoint = (scale: number): V2 => [Math.random() * scale, Math.random() * scale];
 
-export const generateNRandomPoints = (amount: number): V2[] => {
+export const generateNRandomPoints = (amount: number, scale = 1): V2[] => {
   const points: V2[] = [];
   for (let i = 0; i < amount; i++) {
-    points.push(randomPoint());
+    points.push(randomPoint(scale));
   }
   return points;
 }
@@ -31,20 +31,20 @@ export const getVerticesFromTriangles = (tris: Tri[]) => {
   return Array.from(verts);
 };
 
-export const createTestSquare = (): Tri => {
-  const a: Vertex = { p: [0, 0], T: [] };
-  const b: Vertex = { p: [0, 1], T: [] };
-  const c: Vertex = { p: [1, 0], T: [] };
-  const d: Vertex = { p: [1, 1], T: [] };
+export const createTestSquare = (width = 1, height = 1): Tri => {
+  const a: Vertex = { p: [0, 0], T: [], C: new Set<number>([0]) };
+  const b: Vertex = { p: [0, height], T: [], C: new Set<number>([0]) };
+  const c: Vertex = { p: [width, 0], T: [], C: new Set<number>([0]) };
+  const d: Vertex = { p: [width, height], T: [], C: new Set<number>([0]) };
   const t1: Tri = [
-    { neighbor: null, v: a },
-    { neighbor: null, v: b },
-    { neighbor: null, v: c }
+    { neighbor: null, v: a, C: new Set<number>([0]) },
+    { neighbor: null, v: b, C: new Set<number>() },
+    { neighbor: null, v: c, C: new Set<number>([0]) }
   ];
   const t2: Tri = [
-    { neighbor: null, v: b },
-    { neighbor: null, v: d },
-    { neighbor: null, v: c }
+    { neighbor: null, v: b, C: new Set<number>([0]) },
+    { neighbor: null, v: d, C: new Set<number>() },
+    { neighbor: null, v: c, C: new Set<number>([0]) }
   ];
   t1[1].neighbor = t2;
   t2[2].neighbor = t1;

@@ -46,6 +46,9 @@ export const pointIsOnLineSegment = (point: V2, a: V2, b: V2): boolean => {
   const t0 = AP[0] / AB[0];
   // apy = t * apy
   // const t1 = AP[1] / AP[0];
+  if (t0 >= 1) {
+    return false;
+  }
   return (
     V2.eq(V2.scale(AB, t0), AP)
   );
@@ -150,3 +153,24 @@ export const rightSideAngle = (a: V2, b: V2, c: V2): number => {
   const signed = Math.atan2(V2.cross(p2p1, p2p3), V2.dot(p2p1, p2p3));
   return signed < 0 ? 2 * Math.PI + signed : signed;
 }
+
+// https://stackoverflow.com/a/2049593
+export const signSO = (p1: [number, number], p2: [number, number], p3: [number, number]) => {
+  return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
+}
+export const pointInTriangleSO = (pt: [number, number], v1: [number, number], v2: [number, number], v3: [number, number]) => {
+  let d1: number, d2: number, d3: number;
+  let has_neg: boolean, has_pos: boolean;
+
+  d1 = signSO(pt, v1, v2);
+  d2 = signSO(pt, v2, v3);
+  d3 = signSO(pt, v3, v1);
+
+  has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+  has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+  return !(has_neg && has_pos);
+}
+
+// "Shoelace formula"
+export const triArea = (x1: number, x2: number, x3: number, y1: number, y2: number, y3: number) => Math.abs((x1 * y2) + (x2 * y3) + (x3 * y1) - (y1 * x2) - (y2 * x3) - (y3 * x1)) / 2;
