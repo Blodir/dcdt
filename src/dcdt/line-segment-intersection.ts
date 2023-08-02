@@ -4,21 +4,21 @@ const cross2 = (a: V2, b: V2): number => (
   a[0] * b[1] - a[1] * b[0]
 );
 
-interface Intersection {
-  type: 'none' | 'point' | 'vertex' | 'colinear' | 'equal';
+export interface NoIntersection {
+  type: 'none';
 }
 
-export interface PointIntersection extends Intersection {
+export interface PointIntersection {
   type: 'point';
   point: V2;
 }
 
-export interface VertexIntersection extends Intersection {
+export interface VertexIntersection {
   type: 'vertex';
   vertex: number;
 }
 
-export interface ColinearIntersection extends Intersection {
+export interface ColinearIntersection {
   type: 'colinear';
   aIsC: boolean;
   bIsC: boolean;
@@ -27,9 +27,11 @@ export interface ColinearIntersection extends Intersection {
   intersections: number[];
 }
 
-export interface EqualityIntersection extends Intersection {
+export interface EqualityIntersection {
   type: 'equal';
 }
+
+export type IntersectionResult = NoIntersection | PointIntersection | VertexIntersection | ColinearIntersection | EqualityIntersection;
 
 const eq = (a: number, b: number, f = 0.000001): boolean => {
   return Math.abs(b - a) <= f;
@@ -44,7 +46,7 @@ const comp = (a: number, b: number, f = 0.000001): number => {
 // https://stackoverflow.com/a/565282
 // ɛ: distance error
 // f: float error
-export const lineToLineIntersection3 = (a: V2, b: V2, c: V2, d: V2, ɛ = 0.000001, f = 0.000001): Intersection => {
+export const lineSegmentIntersection = (a: V2, b: V2, c: V2, d: V2, ɛ = 0.000001, f = 0.000001): IntersectionResult => {
   const r = V2.sub(b, a);
   const s = V2.sub(d, c);
   // u = (q − p) × r / (r × s)

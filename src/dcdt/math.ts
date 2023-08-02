@@ -21,6 +21,7 @@ export const V2 = {
     } else { return v; }
   },
   dot: (a: V2, b: V2): number => a[0] * b[0] + a[1] * b[1],
+  cross: (a: V2, b: V2): number => a[0] * b[1] - a[1] * b[0],
   rotRad: (v: V2, rad: number): V2 => [Math.cos(rad) * v[0] - Math.sin(rad) * v[1], Math.sin(rad) * v[0] + Math.cos(rad) * v[1]], // anticlockwise rotation
   lerp: (a: V2, b: V2, t: number) => V2.add(a, V2.scale(V2.sub(b, a), t)), // a + (b - a) * t
   quadraticBezier: (a: V2, b: V2, c: V2, t: number) => {
@@ -45,6 +46,9 @@ export const pointIsOnLineSegment = (point: V2, a: V2, b: V2): boolean => {
   const t0 = AP[0] / AB[0];
   // apy = t * apy
   // const t1 = AP[1] / AP[0];
+  if (t0 >= 1) {
+    return false;
+  }
   return (
     V2.eq(V2.scale(AB, t0), AP)
   );
@@ -57,6 +61,7 @@ export const pointIsOnRightSideOfLineSegment = (point: V2, lineSegment: [V2, V2]
   return V2.dot(OB, P) > 0;
 };
 
+// has errors when some of the coordinates are zero?
 export const pointIsInsideTriangle = (p: V2, a: V2, b: V2, c: V2): boolean => (
   pointIsOnLineSegment(p, a, b)
   || pointIsOnLineSegment(p, b, c)
@@ -110,7 +115,9 @@ export const pointIsInsideCircumcircle = (p: V2, a: V2, b: V2, c: V2): boolean =
   return V2.dist(p, circumcenter) < r;
 };
 
-export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => (x < (bx - ax) * (y - ay) / (by - ay) + ax);
+//export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => (x < (bx - ax) * (y - ay) / (by - ay) + ax);
+// expects math coordinates (flipped y)
+export const pointIsOnLeftHalfplane = (x: number, y: number, ax: number, ay: number, bx: number, by: number) => ((bx - ax) * (y - ay) - (by - ay) * (x - ax) > 0);
 
 export const pointDistToLineSegment = (p: V2, a: V2, b: V2): number => {
   const AP = V2.sub(p, a);
@@ -138,3 +145,32 @@ export const pointDistToLineSegmentB = (p: V2, a: V2, b: V2): number | null => {
     return null;
   }
 };
+
+// https://stackoverflow.com/a/38856694
+export const rightSideAngle = (a: V2, b: V2, c: V2): number => {
+  const p2p1 = V2.sub(a, b);
+  const p2p3 = V2.sub(c, b);
+  const signed = Math.atan2(V2.cross(p2p1, p2p3), V2.dot(p2p1, p2p3));
+  return signed < 0 ? 2 * Math.PI + signed : signed;
+}
+
+// https://stackoverflow.com/a/2049593
+export const signSO = (p1: [number, number], p2: [number, number], p3: [number, number]) => {
+  return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1]);
+}
+export const pointInTriangleSO = (pt: [number, number], v1: [number, number], v2: [number, number], v3: [number, number]) => {
+  let d1: number, d2: number, d3: number;
+  let has_neg: boolean, has_pos: boolean;
+
+  d1 = signSO(pt, v1, v2);
+  d2 = signSO(pt, v2, v3);
+  d3 = signSO(pt, v3, v1);
+
+  has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+  has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+  return !(has_neg && has_pos);
+}
+
+// "Shoelace formula"
+export const triArea = (x1: number, x2: number, x3: number, y1: number, y2: number, y3: number) => Math.abs((x1 * y2) + (x2 * y3) + (x3 * y1) - (y1 * x2) - (y2 * x3) - (y3 * x1)) / 2;
