@@ -6,4 +6,6 @@ Sample implementation an algorithm that inserts line-segments into a triangulati
   - Flip intersecting edges until that vertex has only one connected intersecting edge
   - Flipping the last edge always removes the vertex from the channel (as the vertex no longer has any intersecting edges)
 
+https://helda.helsinki.fi/items/1a90aa29-0389-4fb6-9800-e33a5c2deed8
+
 Requires: `node & npm`. Install: `npm i`. Run demo: `npm start` (hosts the visualization at localhost:8080)
